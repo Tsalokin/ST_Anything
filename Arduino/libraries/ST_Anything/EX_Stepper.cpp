@@ -33,7 +33,7 @@
 //
 //
 //******************************************************************************************
-#include "EX_Servo.h"
+#include "EX_Stepper.h"
 
 #include "Constants.h"
 #include "Everything.h"
@@ -43,15 +43,13 @@
 namespace st
 {
 	//private
-	void EX_Servo::writeAngleToPin()
+	void EX_Stepper::calcMotorPosition()
 	{
 		if(m_bMoveActive == true) {
 			m_bMoveActive = false;
 		}
 
-		if (!m_Servo.attached()) {
-			m_Servo.attach(m_nPinPWM, m_nMinPulseWidth, m_nMaxPulseWidth);
-		}
+		m_Stepper.enableOutputs();
 
 		if ((m_nTargetAngle < m_nMinLevelAngle) and (m_nTargetAngle < m_nMaxLevelAngle)) {
 			if (m_nMinLevelAngle < m_nMaxLevelAngle) {
@@ -83,67 +81,68 @@ namespace st
 
 	//public
 	//constructor
-	EX_Servo::EX_Servo(const __FlashStringHelper *name, byte pinPWM, int startingAngle, bool detachAfterMove, long servoDetachTime, int minLevelAngle, int maxLevelAngle, int servoRate, int minPulseWidth, int maxPulseWidth) :
+	EX_Stepper::EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, byte pinEnable, int startingAngle, bool disableAfterMove, long servoDisableTime, int minLevelAngle, int maxLevelAngle, int servoRate, int minPulseWidth, int maxPulseWidth) :
 		Executor(name),
-		m_Stepper(),
+		m_Stepper(AccelStepper::DRIVER, pinStep, pinDir),
 		m_nTargetAngle(startingAngle),
-		m_bDetachAfterMove(detachAfterMove),
-		m_nDetachTime(servoDetachTime),
+		m_bDisableAfterMove(disableAfterMove),
+		m_nDisableTime(servoDisableTime),
 		m_nMinLevelAngle(minLevelAngle),
 		m_nMaxLevelAngle(maxLevelAngle),
 		m_nCurrentRate(servoRate),
 		m_bMoveActive(false),
-		m_bDetachTmrActive(false),
+		m_bDisableTmrActive(false),
 		m_nMinPulseWidth(minPulseWidth),
 		m_nMaxPulseWidth(maxPulseWidth)
 	{
-		setPWMPin(pinPWM);
+		setEnablePin(pinEnable);
 		m_nOldAngle = (minLevelAngle + maxLevelAngle) / 2;
 	}
 
 	//destructor
-	EX_Servo::~EX_Stepper()
+	EX_Stepper::~EX_Stepper()
 	{
 
 	}
 
-	void EX_Servo::init()
+	void EX_Stepper::init()
 	{
-		writeAngleToPin();
+		m_Stepper.setEnablePin(m_nPinEn);
+		calcMotorPosition();
 		refresh();
 	}
 
-	void EX_Servo::update()
+	void EX_Stepper::update()
 	{
 		if (m_bMoveActive) {
 			if ((millis() - m_nPrevMillis) > m_nTimeStep) {
 			    m_nPrevMillis = millis();
 				if (m_nCurrentAngle != m_nTargetAngle) {
 					if (m_nTargetAngle >= m_nOldAngle) {
-						m_nCurrentAngle = m_nCurrentAngle + 1;
+						m_Stepper.move(1);
 					}
 					else {
-						m_nCurrentAngle = m_nCurrentAngle - 1;
+						m_Stepper.move(- 1);
 					}
-					m_Servo.write(m_nCurrentAngle);
+					m_Stepper.run();
 				}
 				else {
 					m_bMoveActive = false;
 					if (st::Executor::debug) {
 						Serial.println(F("EX_Servo::update() move complete"));
 					}
-					if (m_bDetachAfterMove) { 
-						m_bDetachTmrActive = true;
+					if (m_bDisableAfterMove) { 
+						m_bDisableTmrActive = true;
 					}
 					refresh();
 				}
 			}
 		}
 
-		if (m_bDetachTmrActive) {
-			if ((millis() - m_nPrevMillis) > m_nDetachTime) {
-				m_bDetachTmrActive = false;
-				m_Servo.detach();
+		if (m_bDisableTmrActive) {
+			if ((millis() - m_nPrevMillis) > m_nDisableTime) {
+				m_bDisableTmrActive = false;
+				m_Stepper.disableOutputs();
 				if (st::Executor::debug) {
 					Serial.println(F("EX_Servo::update() detach complete"));
 				}
@@ -151,7 +150,7 @@ namespace st
 		}
 	}
 
-	void EX_Servo::beSmart(const String &str)  
+	void EX_Stepper::beSmart(const String &str)  
 	{
 		String level = str.substring(str.indexOf(' ') + 1, str.indexOf(':'));
 		String rate = str.substring(str.indexOf(':') + 1);
@@ -179,19 +178,19 @@ namespace st
 			Serial.print(F("EX_Servo::beSmart CurrentRate = "));
 			Serial.println(m_nCurrentRate);
 		}
-		writeAngleToPin();
+		calcMotorPosition();
 		
 
 	}
 
-	void EX_Servo::refresh()
+	void EX_Stepper::refresh()
 	{
 		Everything::sendSmartString(getName() + " " + String(m_nCurrentLevel) + ":" + String(m_nTargetAngle) + ":" + String(m_nCurrentRate));
 	}
 
-	void EX_Servo::setPWMPin(byte pin)
+	void EX_Stepper::setEnablePin(byte pin)
 	{
-		m_nPinPWM = pin;
+		m_nPinEn = pin;
 	}
 }
 

@@ -366,6 +366,9 @@ private createChildDevice(String deviceName, String deviceNumber) {
          		case "servo": 
                 		deviceHandlerName = "Child Servo" 
                 	break
+				case "Stepper": 
+                		deviceHandlerName = "Child Stepper" 
+                	break
          		case "pressure": 
                 		deviceHandlerName = "Child Pressure Measurement" 
                 	break

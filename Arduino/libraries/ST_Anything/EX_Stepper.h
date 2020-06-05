@@ -43,34 +43,33 @@
 
 namespace st
 {
-	class EX_Servo: public Executor
+	class EX_Stepper: public Executor
 	{
-		private:
-			AccelStepper m_Stepper;           //Servo object
-			byte m_nPinStep;			 //Arduino Pin used as a PWM Output for the switch level capability
-			byte m_nPinDir;			 //Arduino Pin used as a PWM Output for the switch level capability
+		private:       //Stepper object
+			AccelStepper m_Stepper;
+			byte m_nPinEn;			 //Arduino Pin used as a Enable Output for the Stepper
 			int m_nCurrentLevel;	 //Servo Level value from SmartThings/Hubitat (0 to 100%)
 			int m_nOldAngle;		 //starting angle for servo move
 			int m_nTargetAngle;		 //ending angle for servo move, value mapped to Servo Level (0 to 180 degrees maximum range)
 			int m_nCurrentAngle;	 //servo angle output while stepping from OldAngle to TargetAngle
 			long m_nCurrentRate;     //Servo move Duration value from SmartThings/Hubitat (0 to 10000 milliseconds)
-			long m_nDetachTime;      //Servo Detach Time in milliseconds
-			bool m_bDetachAfterMove; //Issue a servo.detach() after servo move is complete
+			long m_nDisableTime;      //Servo Detach Time in milliseconds
+			bool m_bDisableAfterMove; //Issue a servo.detach() after servo move is complete
 			int m_nMinLevelAngle;	 //Angle (0-180 degrees)to map to level 0
 			int m_nMaxLevelAngle;	 //Angle (0-180 degrees)to map to level 100
 			bool m_bMoveActive;      //True if servo move is active (asynchronous motion)
-			bool m_bDetachTmrActive; //True if servo is waiting to power off
+			bool m_bDisableTmrActive; //True if servo is waiting to power off
 			long m_nTimeStep;        //Number of milliseconds per servo motor degree (i.e. rate of change for the servo)
 			long m_nPrevMillis;      //Previous millis() value
 			int m_nMinPulseWidth;    //Minimum Servo Pulse Width
 			int m_nMaxPulseWidth;    //Maximum Servo Pulse Width
 
 
-			void writeAngleToPin();	//function to update the Arduino PWM Output Pin
+			void calcMotorPosition();	//function to update the Arduino PWM Output Pin
 
 		public:
 			//constructor - called in your sketch's global variable declaration section
-			EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, int startingAngle = 90, bool detachAfterMove = false, long servoDetachTime = 1000, int minLevelAngle = 0, int maxLevelAngle = 180, int servoRate = 2000, int minPulseWidth = 544, int maxPulseWidth = 2400);
+			EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, byte pinEnable, int startingAngle = 90, bool detachAfterMove = false, long servoDetachTime = 1000, int minLevelAngle = 0, int maxLevelAngle = 180, int servoRate = 2000, int minPulseWidth = 544, int maxPulseWidth = 2400);
 			
 			//destructor
 			virtual ~EX_Stepper();
@@ -86,18 +85,14 @@ namespace st
 			
 			//called periodically to ensure state of the switch is up to date in the SmartThings Cloud / Hubitat Hub (in case an event is missed)
 			virtual void refresh();
-			
-			//gets
-			virtual byte getStepPin() const { return m_nPinStep; }
-			virtual byte getDirPin() const { return m_nPinDir; }
 
 			virtual bool getAngle() const { return m_nTargetAngle; }	//Angle of the Servo mapped to Level
 			virtual bool getLevel() const { return m_nCurrentLevel; }	//Servo Level from ST/Hubitat
 			virtual bool getRate() const { return m_nCurrentRate; }	//Duration from ST/Hubitat
 
 			//sets
-			virtual void setStepPin(byte pin);
-			virtual void setDirPin(byte pin);
+			virtual void setEnablePin(byte pin);
+
 	};
 }
 

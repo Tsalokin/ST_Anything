@@ -57,20 +57,21 @@
 //******************************************************************************************
 #define PIN_STEP_1    D1  //SmartThings Capabilty "Switch Level"
 #define PIN_DIR_1    D2  
+#define PIN_ENABLE_1    D3  
 
 //******************************************************************************************
 //ESP8266 WiFi Information
 //******************************************************************************************
-String str_ssid     = "ssid";                           //  <---You must edit this line!
-String str_password = "wifipass";                   //  <---You must edit this line!
-IPAddress ip(10, 1, 0, 40);       //Device IP Address       //  <---You must edit this line!
-IPAddress gateway(10, 1, 0, 1);    //Router gateway          //  <---You must edit this line!
+String str_ssid     = "yourSSIDhere";                           //  <---You must edit this line!
+String str_password = "yourWiFiPasswordhere";                   //  <---You must edit this line!
+IPAddress ip(192, 168, 1, 227);       //Device IP Address       //  <---You must edit this line!
+IPAddress gateway(192, 168, 1, 1);    //Router gateway          //  <---You must edit this line!
 IPAddress subnet(255, 255, 255, 0);   //LAN subnet mask         //  <---You must edit this line!
-IPAddress dnsserver(10, 1, 0, 1);  //DNS server              //  <---You must edit this line!
+IPAddress dnsserver(192, 168, 1, 1);  //DNS server              //  <---You must edit this line!
 const unsigned int serverPort = 8090; // port to run the http server on
 
 // Smartthings / Hubitat Hub TCP/IP Address
-IPAddress hubIp(10, 1, 0, 5);    // smartthings/hubitat hub ip //  <---You must edit this line!
+IPAddress hubIp(192, 168, 1, 149);    // smartthings/hubitat hub ip //  <---You must edit this line!
 
 // SmartThings / Hubitat Hub TCP/IP Address: UNCOMMENT line that corresponds to your hub, COMMENT the other
 const unsigned int hubPort = 39500;   // smartthings hub port
@@ -118,7 +119,7 @@ void setup()
   //Special sensors/executors (uses portions of both polling and executor classes)
   
   //Executors
-  static st::EX_Stepper executor1(F("servo1"), PIN_STEP_1, PIN_DIR_1);  //last argument is the starting angle for the stepper (0-180)
+  static st::EX_Stepper executor1(F("stepper1"), PIN_STEP_1, PIN_DIR_1, PIN_ENABLE_1);  //last argument is the starting angle for the stepper (0-180)
   
   //*****************************************************************************
   //  Configure debug print output from each main class 

@@ -69,7 +69,7 @@ namespace st
 
 		public:
 			//constructor - called in your sketch's global variable declaration section
-			EX_Servo(const __FlashStringHelper *name, byte pinPWM, int startingAngle = 90, bool detachAfterMove = false, long servoDetachTime = 1000, int minLevelAngle = 0, int maxLevelAngle = 180, int servoRate = 2000, int minPulseWidth = 544, int maxPulseWidth = 2400);
+			EX_Servo(const __FlashStringHelper *name, byte pinPWM, int startingAngle = 90, bool detachAfterMove = false, long servoDetachTime = 1000, int minLevelAngle = 0, int maxLevelAngle = 180, int servoRate = 2000, int minPulseWidth = 0, int maxPulseWidth = 10000);
 			
 			//destructor
 			virtual ~EX_Servo();

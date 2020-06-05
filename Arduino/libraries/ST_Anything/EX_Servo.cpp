@@ -125,7 +125,7 @@ namespace st
 					else {
 						m_nCurrentAngle = m_nCurrentAngle - 1;
 					}
-					m_Servo.write(m_nCurrentAngle);
+					m_Servo.writeMicroseconds(m_nCurrentAngle);
 				}
 				else {
 					m_bMoveActive = false;
