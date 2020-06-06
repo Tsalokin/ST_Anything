@@ -50,7 +50,7 @@ namespace st
 			byte m_nPinEn;			 //Arduino Pin used as a Enable Output for the Stepper
 			int m_nCurrentLevel;	 //Servo Level value from SmartThings/Hubitat (0 to 100%)
 			int m_nOldAngle;		 //starting angle for servo move
-			int m_nTargetAngle;		 //ending angle for servo move, value mapped to Servo Level (0 to 180 degrees maximum range)
+			long m_nTargetAngle;		 //ending angle for servo move, value mapped to Servo Level (0 to 180 degrees maximum range)
 			int m_nCurrentAngle;	 //servo angle output while stepping from OldAngle to TargetAngle
 			long m_nCurrentRate;     //Servo move Duration value from SmartThings/Hubitat (0 to 10000 milliseconds)
 			long m_nDisableTime;      //Servo Detach Time in milliseconds
@@ -69,7 +69,7 @@ namespace st
 
 		public:
 			//constructor - called in your sketch's global variable declaration section
-			EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, byte pinEnable, int startingAngle = 90, bool detachAfterMove = false, long servoDetachTime = 1000, int minLevelAngle = 0, int maxLevelAngle = 180, int servoRate = 2000, int minPulseWidth = 544, int maxPulseWidth = 2400);
+			EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, byte pinEnable, int startingAngle = 0, bool detachAfterMove = true, long servoDetachTime = 1000, int minLevelAngle = -1024, int maxLevelAngle = 1024, int stepRate = 50);
 			
 			//destructor
 			virtual ~EX_Stepper();

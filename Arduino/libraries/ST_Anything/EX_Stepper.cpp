@@ -81,7 +81,7 @@ namespace st
 
 	//public
 	//constructor
-	EX_Stepper::EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, byte pinEnable, int startingAngle, bool disableAfterMove, long servoDisableTime, int minLevelAngle, int maxLevelAngle, int servoRate, int minPulseWidth, int maxPulseWidth) :
+	EX_Stepper::EX_Stepper(const __FlashStringHelper *name, byte pinStep, byte pinDir, byte pinEnable, int startingAngle, bool disableAfterMove, long servoDisableTime, int minLevelAngle, int maxLevelAngle, int stepRate) :
 		Executor(name),
 		m_Stepper(AccelStepper::DRIVER, pinStep, pinDir),
 		m_nTargetAngle(startingAngle),
@@ -89,11 +89,9 @@ namespace st
 		m_nDisableTime(servoDisableTime),
 		m_nMinLevelAngle(minLevelAngle),
 		m_nMaxLevelAngle(maxLevelAngle),
-		m_nCurrentRate(servoRate),
+		m_nCurrentRate(stepRate),
 		m_bMoveActive(false),
-		m_bDisableTmrActive(false),
-		m_nMinPulseWidth(minPulseWidth),
-		m_nMaxPulseWidth(maxPulseWidth)
+		m_bDisableTmrActive(false)
 	{
 		setEnablePin(pinEnable);
 		m_nOldAngle = (minLevelAngle + maxLevelAngle) / 2;
@@ -108,6 +106,9 @@ namespace st
 	void EX_Stepper::init()
 	{
 		m_Stepper.setEnablePin(m_nPinEn);
+		m_Stepper.setPinsInverted(false,false,true);
+		m_Stepper.setAcceleration(100);
+		m_Stepper.setMaxSpeed(m_nCurrentRate);
 		calcMotorPosition();
 		refresh();
 	}
@@ -115,29 +116,22 @@ namespace st
 	void EX_Stepper::update()
 	{
 		if (m_bMoveActive) {
-			if ((millis() - m_nPrevMillis) > m_nTimeStep) {
-			    m_nPrevMillis = millis();
-				if (m_nCurrentAngle != m_nTargetAngle) {
-					if (m_nTargetAngle >= m_nOldAngle) {
-						m_Stepper.move(1);
-					}
-					else {
-						m_Stepper.move(- 1);
-					}
-					m_Stepper.run();
+			
+			m_Stepper.moveTo(m_nTargetAngle);
+			
+			if(m_Stepper.targetPosition() == m_Stepper.currentPosition()){
+				m_bMoveActive = false;
+				if (st::Executor::debug) {
+					Serial.println(F("EX_Servo::update() move complete"));
 				}
-				else {
-					m_bMoveActive = false;
-					if (st::Executor::debug) {
-						Serial.println(F("EX_Servo::update() move complete"));
-					}
-					if (m_bDisableAfterMove) { 
-						m_bDisableTmrActive = true;
-					}
-					refresh();
+				if (m_bDisableAfterMove) { 
+					m_bDisableTmrActive = true;
 				}
+				refresh();
 			}
+			
 		}
+		m_Stepper.run();
 
 		if (m_bDisableTmrActive) {
 			if ((millis() - m_nPrevMillis) > m_nDisableTime) {
@@ -151,22 +145,40 @@ namespace st
 	}
 
 	void EX_Stepper::beSmart(const String &str)  
-	{
-		String level = str.substring(str.indexOf(' ') + 1, str.indexOf(':'));
-		String rate = str.substring(str.indexOf(':') + 1);
-       
+	{	
+		String level = "";
+		String rate = "";
+		String max = "";
+		String min = "";
+
+		if(str.indexOf('!') == -1){
+			level = str.substring(str.indexOf(' ') + 1, str.indexOf(':'));
+			rate = str.substring(str.indexOf(':') + 1, str.indexOf('+'));
+			max = str.substring(str.indexOf('+') + 1, str.indexOf('-'));
+			min = str.substring(str.indexOf('-') + 1);
+		}
+		
 		level.trim();
 		rate.trim();
+		min.trim();
+		max.trim();
 		
 		if (st::Executor::debug) {
 			Serial.print(F("EX_Servo::beSmart level = "));
 			Serial.println(level);
 			Serial.print(F("EX_Servo::beSmart rate = "));
 			Serial.println(rate);
+			Serial.print(F("EX_Servo::beSmart min = "));
+			Serial.println(min);
+			Serial.print(F("EX_Servo::beSmart max = "));
+			Serial.println(max);
 		}
 				
 		m_nCurrentLevel = int(level.toInt());
 		m_nCurrentRate = long(rate.toInt());
+		m_Stepper.setMaxSpeed(m_nCurrentRate);
+		m_nMaxLevelAngle = long(max.toInt());
+		m_nMinLevelAngle = long(min.toInt());
 		m_nOldAngle = m_nCurrentAngle;
 		m_nTargetAngle = map(m_nCurrentLevel, 0, 100, m_nMinLevelAngle, m_nMaxLevelAngle);
 

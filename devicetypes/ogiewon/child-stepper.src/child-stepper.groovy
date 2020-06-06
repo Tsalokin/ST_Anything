@@ -44,7 +44,6 @@ metadata {
             input ("rateValue", "number", title: "Default rate (Steps/s)", required: false, defaultValue: 1000, description: "Number of steps per second the motor will travel")
             input ("minvalue", "number", title: "Minimum step count", required: false, defaultValue: 0, description: "Minimum value the motor can move to")
             input ("maxvalue", "number", title: "Maximun step count", required: false, defaultValue: 1000, description: "Maximum value the motor can move to")
-            input ("curvalue", "number", title: "Current step count", required: false, defaultValue: 500, description: "Value the motor is currently at")
     }
 
 	tiles(scale: 2) {
@@ -86,15 +85,18 @@ def off() {
 	setLevel(offvalue)
 }
 
-def setLevel(level, rate = null) {
+def setLevel(level, rate = null, min = null, max = null) {
+    if (level == null) level = 50
     if (rate == null) rate = rateValue.toInteger()
     
     log.debug "setLevel >> level: ${level}, rate: ${rate}"
     
     level = Math.max(Math.min(level.toInteger(), 100), 0)
-    rate = Math.max(Math.min(rate.toInteger(), 30000), 0)
+    rate = Math.max(Math.min(rate.toInteger(), 1000), 0)
+    min = Math.max(Math.min(minvalue.toInteger(), 1000), 0)
+    max = Math.max(Math.min(maxvalue.toInteger(), 10000), 0)
     
-    sendData("${level}:${rate}")
+    sendData("${level}:${rate}+${max}-${min}")
 }
 
 def sendData(String value) {
